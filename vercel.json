@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["sin1"],
+  "functions": {
+    "backend/app/main.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{frontend/**,notebooks/**,docs/**,scripts/**,data/processed/**,data/ml_outputs/**,data/evaluation/**,backend/tests/**,*.md,render.yaml,docker-compose.yml}"
+    }
+  }
+}

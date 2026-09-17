@@ -1,0 +1,5 @@
+# Deps deployment Vercel untuk backend BizIntel AI.
+# Runtime Python Vercel mencari requirements.txt di root project; satu
+# sumber pin tetap backend/requirements.txt agar lokal, Docker, dan
+# Vercel memakai versi persis identik (tidak ada duplikasi pin).
+-r backend/requirements.txt

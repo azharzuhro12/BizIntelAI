@@ -20,15 +20,23 @@ def get_client() -> chromadb.api.ClientAPI:
 
 
 def get_collection(create: bool = False):
-    """Koleksi knowledge; return None jika belum ada dan create=False."""
-    client = get_client()
+    """Koleksi knowledge; return None jika belum ada dan create=False.
+
+    Jalur baca (create=False) fail-soft: jika client ChromaDB gagal
+    diinisialisasi (mis. filesystem read-only di serverless), kembalikan
+    None agar retriever memberi pesan terkontrol, bukan exception/HTTP 500.
+    Jalur ingest (create=True) tetap fail-loud agar kegagalan ingest
+    lokal/Docker tetap terlihat.
+    """
     if create:
+        client = get_client()
         return client.get_or_create_collection(
             name=COLLECTION_NAME,
             embedding_function=get_embedding_function(),
             metadata={"hnsw:space": "cosine"},
         )
     try:
+        client = get_client()
         return client.get_collection(name=COLLECTION_NAME)
-    except Exception:  # noqa: BLE001 - koleksi belum ada
+    except Exception:  # noqa: BLE001 - koleksi belum ada / ChromaDB tak tersedia
         return None

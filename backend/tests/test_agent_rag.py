@@ -28,6 +28,7 @@ from app.rag.config import CHROMA_DIR, CHUNK_SIZE, COLLECTION_NAME  # noqa: E402
 from app.rag.ingest import ingest_knowledge  # noqa: E402
 from app.rag.loader import chunk_text, load_chunks  # noqa: E402
 from app.rag.retriever import search_knowledge  # noqa: E402
+from app.rag import vectorstore  # noqa: E402
 from app.rag.vectorstore import get_collection  # noqa: E402
 
 client = TestClient(app)
@@ -290,3 +291,42 @@ def test_rag_search_endpoint():
 def test_rag_search_endpoint_validates_request(payload):
     r = client.post("/api/rag/search", json=payload)
     assert r.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Graceful degradation: ChromaDB tidak tersedia (fs read-only / serverless)
+# ---------------------------------------------------------------------------
+def _readonly_fs_error():
+    """Simulasi get_client() saat CHROMA_DIR berada di filesystem read-only."""
+    raise PermissionError(13, "Permission denied", str(CHROMA_DIR))
+
+
+def test_get_collection_read_path_fails_soft(monkeypatch):
+    monkeypatch.setattr(vectorstore, "get_client", _readonly_fs_error)
+    assert vectorstore.get_collection(create=False) is None  # fail-soft
+    with pytest.raises(PermissionError):  # jalur ingest tetap fail-loud
+        vectorstore.get_collection(create=True)
+
+
+def test_search_knowledge_unavailable_is_controlled(monkeypatch):
+    monkeypatch.setattr(vectorstore, "get_client", _readonly_fs_error)
+    out = search_knowledge("aturan promotion")
+    assert out == {
+        "query": "aturan promotion",
+        "results": [],
+        "message": "Knowledge base belum di-ingest (koleksi kosong).",
+    }
+
+
+def test_rag_tool_and_endpoint_unavailable_no_500(monkeypatch):
+    """Agent tool dan endpoint harus memberi hasil terkontrol, bukan crash/500."""
+    monkeypatch.setattr(vectorstore, "get_client", _readonly_fs_error)
+    tools = {t.name: t for t in get_tools()}
+    out_tool = json.loads(
+        tools["search_business_knowledge"].invoke({"query": "aturan promotion"})
+    )
+    assert out_tool["results"] == []
+    assert "koleksi kosong" in out_tool["message"]
+    r = client.post("/api/rag/search", json={"query": "aturan promotion"})
+    assert r.status_code == 200
+    assert "koleksi kosong" in r.json()["message"]

@@ -1,0 +1,21 @@
+# BizIntel AI - Vercel Python deployment metadata (backend).
+#
+# Vercel memuat aplikasi FastAPI dari module:variable di bawah ini
+# (dokumentasi: vercel.com/docs/functions/runtimes/python, bagian
+# "Python entrypoints" / tool.vercel.entrypoint). Tidak ada file Python
+# tambahan dan tidak ada sys.path hack: entrypoint menunjuk langsung ke
+# aplikasi yang sudah ada.
+#
+# File ini TIDAK memengaruhi jalur lokal/Docker/Render:
+# - backend/Dockerfile hanya me-COPY backend/ data/ scripts/ db/ dari
+#   root (pyproject root tidak ikut ke image),
+# - render.yaml tetap membaca backend/Dockerfile,
+# - pytest berjalan dari backend/ dan tidak membaca pyproject root.
+#
+# Dependencies tetap SATU sumber kebenaran: backend/requirements.txt
+# (direferensikan oleh requirements.txt root untuk Vercel).
+# Versi Python: file .python-version (3.13; didukung runtime Vercel, semua
+# pin backend/requirements.txt terverifikasi resolve sebagai wheel cp313).
+
+[tool.vercel]
+entrypoint = "backend.app.main:app"
