@@ -93,20 +93,20 @@ One conversational interface backed by a **grounded agent**:
 
 ```mermaid
 flowchart TD
-    User[User] --> Dashboard[Next.js Dashboard<br/>(React 19, TypeScript, Recharts)]
-    Dashboard -->|REST + CORS| API[FastAPI :8020]
-    API --> Agent[LangGraph AI Agent<br/>GLM-5.3 reasoning]
+    User[User] --> Dashboard["Next.js Dashboard<br/>(React 19, TypeScript, Recharts)"]
+    Dashboard -->|"REST + CORS"| API["FastAPI :8020"]
+    API --> Agent["LangGraph AI Agent<br/>GLM-5.3 reasoning"]
 
-    Agent -->|SQL tools| PG[(PostgreSQL 17<br/>sales 254 / daily_metrics 53)]
-    Agent -->|forecast tool| ML[Linear Regression<br/>joblib artifact]
-    Agent -->|anomaly tool| IF[Isolation Forest labels<br/>in daily_metrics]
-    Agent -->|RAG tool| CH[(ChromaDB<br/>all-MiniLM-L6-v2 embeddings)]
+    Agent -->|"SQL tools"| PG[("PostgreSQL 17<br/>sales 254 / daily_metrics 53")]
+    Agent -->|"forecast tool"| ML["Linear Regression<br/>joblib artifact"]
+    Agent -->|"anomaly tool"| IF["Isolation Forest labels<br/>in daily_metrics"]
+    Agent -->|"RAG tool"| CH[("ChromaDB<br/>all-MiniLM-L6-v2 embeddings")]
 
-    Agent --> MEM[(agent_messages<br/>session memory)]
-    Agent --> AUD[(agent_runs<br/>audit trail)]
+    Agent --> MEM[("agent_messages<br/>session memory")]
+    Agent --> AUD[("agent_runs<br/>audit trail")]
 
-    Agent -->|grounded answer + citations| Dashboard
-    Dashboard --> Assistant[AI Assistant panel<br/>Markdown + tool chips + sources]
+    Agent -->|"grounded answer + citations"| Dashboard
+    Dashboard --> Assistant["AI Assistant panel<br/>Markdown + tool chips + sources"]
 ```
 
 One agent, one graph — no multi-agent orchestration, no MCP. The LLM is used for tool selection and answer composition; every number originates from a tool. Data flow into the system: `notebooks/` (EDA + ML) → `data/processed/*.csv` → `scripts/import_data.py` → PostgreSQL; `data/knowledge/*.md` → RAG ingest (chunk 700/80, local ONNX embeddings) → ChromaDB.
