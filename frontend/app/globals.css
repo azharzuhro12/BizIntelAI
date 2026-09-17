@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/*
+ * Palet dashboard BizIntel AI (skill dataviz; tervalidasi
+ * scripts/validate_palette.js pada mode light & dark - CVD ΔE >= 24).
+ * - series-1/series-2 : categorical 2 slot (identitas deret)
+ * - forecast          : shade kedua dari hue series-1 (entitas sama:
+ *                       aktual solid, prediksi dashed) - 2 shade 1 hue
+ * - grid              : hairline solid satu langkah dari surface
+ * Redesign 2026-09-17 (SaaS BI): page = surface netral sangat terang,
+ * kartu = card putih; status sistem = success (hijau lembut); warning
+ * memakai series-2 (oranye, identitas anomaly) - warna chart TIDAK berubah.
+ */
+
+:root {
+  --surface: #f7f7f5;
+  --card: #ffffff;
+  --ink: #0b0b0b;
+  --ink-secondary: #52514e;
+  --ink-muted: #898781;
+  --grid: #e4e3dc;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --forecast: #1e5fae;
+  --success: #1e8e5a;
+  --wash: rgba(42, 120, 214, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #141413;
+    --card: #1e1e1d;
+    --ink: #ffffff;
+    --ink-secondary: #c3c2b7;
+    --ink-muted: #898781;
+    --grid: #2e2e2c;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --forecast: #7fb1ef;
+    --success: #4cc38a;
+    --wash: rgba(57, 135, 229, 0.12);
+  }
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+  --color-hairline: var(--grid);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-forecast: var(--forecast);
+  --color-success: var(--success);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Angka rata kolom hanya di tabel/tick; nilai tile tetap proportional. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ring kartu 2px pada marker chart yang tumpang tindih garis. */
+.recharts-active-dot circle {
+  stroke: var(--card);
+  stroke-width: 2;
+}

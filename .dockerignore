@@ -1,0 +1,24 @@
+# Rahasia TIDAK boleh masuk image (backend context = root repo)
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Runtime / regenerable (chroma dibangun ulang oleh ingest saat startup)
+data/chroma
+data/evaluation/latest_evaluation.json
+data/evaluation/latest_session_evaluation.json
+
+# Cache & dependensi
+**/__pycache__
+**/.pytest_cache
+frontend/node_modules
+frontend/.next
+.git
+.claude
+
+# Tidak dibutuhkan image backend (frontend punya context sendiri)
+frontend
+notebooks
+docs
+backend/tests

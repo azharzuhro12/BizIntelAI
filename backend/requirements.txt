@@ -1,0 +1,34 @@
+# BizIntel AI - backend dependencies
+# Python 3.14 (host). Versi = versi yang terverifikasi berjalan.
+
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+pydantic==2.13.4
+
+# Database
+psycopg2-binary==2.9.13
+
+# Model inference
+joblib==1.6.0
+pandas==3.0.5
+# CATATAN scikit-learn:
+# Artefak ML disimpan dengan sklearn 1.6.1 (environment Kaggle), host memakai 1.9.1.
+# Sudah diverifikasi: load + predict() berfungsi identik di 1.9.1 (LinearRegression
+# menyimpan coef_/intercept_ di pickle; mismatch versi hanya memengaruhi repr/get_params).
+# Tidak ada pin 1.6.1 karena wheel cp314 tidak tersedia untuk sklearn 1.6.1.
+scikit-learn==1.9.1
+
+# AI Agent - Phase 1 (LangGraph + SQL analytics tools, read-only)
+# Provider LLM mengikuti konfigurasi environment yang ada di mesin ini:
+# endpoint Anthropic-compatible (lihat backend/app/agent/llm.py & docs/agent-phase1.md).
+langgraph==1.2.11
+langchain-core==1.6.3
+langchain-anthropic==1.7.2
+
+# RAG business knowledge - Phase 3 (ChromaDB persist + embedding ONNX lokal
+# all-MiniLM-L6-v2 bawaan ChromaDB: tanpa torch, tanpa API key, bukan LLM)
+chromadb==1.5.9
+
+# Testing (dev)
+pytest==9.1.1
+httpx==0.28.1

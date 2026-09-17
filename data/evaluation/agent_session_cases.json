@@ -1,0 +1,64 @@
+{
+  "description": "Regression multi-turn (Phase 5.2): perilaku agent DALAM SESI dengan konteks percakapan. Fokus: (1) pertanyaan out-of-scope pada turn lanjutan tidak boleh memicu panggilan tool hanya karena turn sebelumnya memakai tool (SQL/ML/RAG semua variasi); (2) pergantian jenis kebutuhan informasi antar turn tetap di-route ke tool yang benar meski ada konteks. File ini TIDAK mengubah expected cases pada agent_eval_cases.json.",
+  "sessions": [
+    {
+      "id": "session_ood_001",
+      "description": "Turn 1 pertanyaan SQL normal (get_kpi); turn 2 follow-up out-of-scope 'profit margin' - data tidak tersedia di database maupun knowledge base, jadi TIDAK boleh ada panggilan tool dan jawaban wajib frasa kontrak 'tidak tersedia'.",
+      "turns": [
+        {
+          "question": "Berapa total revenue?",
+          "expected_tools": ["get_kpi"]
+        },
+        {
+          "question": "Bagaimana dengan profit margin?",
+          "expected_tools": [],
+          "expect_unavailable": true
+        }
+      ]
+    },
+    {
+      "id": "session_ood_002",
+      "description": "Turn 1 pertanyaan ML (get_revenue_forecast, pola ml_001); turn 2 out-of-scope 'jumlah staf' - staf tidak termasuk data yang tersedia, jadi 0 tool + frasa kontrak. Menguji bahwa konteks turn ML tidak membuat follow-up OOD ikut memanggil tool.",
+      "turns": [
+        {
+          "question": "Berapa prediksi revenue 3 hari ke depan?",
+          "expected_tools": ["get_revenue_forecast"]
+        },
+        {
+          "question": "Berapa jumlah staf yang bekerja di restoran?",
+          "expected_tools": [],
+          "expect_unavailable": true
+        }
+      ]
+    },
+    {
+      "id": "session_ood_003",
+      "description": "Turn 1 pertanyaan RAG (search_business_knowledge, pola rag_002); turn 2 out-of-scope 'HPP/biaya bahan baku' - cost/HPP tidak tersedia, jadi 0 tool + frasa kontrak. Menguji bahwa konteks turn RAG tidak membuat follow-up OOD ikut memanggil tool.",
+      "turns": [
+        {
+          "question": "Kapan inventory perlu direstock?",
+          "expected_tools": ["search_business_knowledge"]
+        },
+        {
+          "question": "Berapa HPP atau biaya bahan baku untuk menu Burgers?",
+          "expected_tools": [],
+          "expect_unavailable": true
+        }
+      ]
+    },
+    {
+      "id": "session_switch_001",
+      "description": "Turn 1 SQL (get_kpi); turn 2 kebutuhan RAG (pola rag_001) - routing harus GANTI ke search_business_knowledge meski turn sebelumnya SQL; tidak boleh jawab policy dari ingatan model tanpa retrieval.",
+      "turns": [
+        {
+          "question": "Berapa total revenue?",
+          "expected_tools": ["get_kpi"]
+        },
+        {
+          "question": "Apa aturan promotion?",
+          "expected_tools": ["search_business_knowledge"]
+        }
+      ]
+    }
+  ]
+}

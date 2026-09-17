@@ -1,0 +1,14 @@
+# Tidak ada rahasia/env lokal di image frontend
+.env
+.env.*
+
+# Dependensi & artefak build (dibangun ulang di dalam image)
+node_modules
+.next
+*.tsbuildinfo
+
+# Tidak dibutuhkan runtime
+tests
+AGENTS.md
+CLAUDE.md
+README.md

@@ -1,0 +1,29 @@
+# Environment / secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# OS
+.DS_Store
+
+# Local agent/tool settings (bukan bagian dari project)
+.claude/
+
+# RAG vector store (runtime, regenerable via python3 -m app.rag.ingest)
+data/chroma/
+
+# Evaluation report artifacts (regenerable via python3 scripts/evaluate_agent.py)
+data/evaluation/latest_evaluation.json
+data/evaluation/latest_session_evaluation.json
+
+# Frontend (Next.js) — build/dep artifacts & env lokal
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/.env*.local
+frontend/next-env.d.ts
+frontend/*.tsbuildinfo
