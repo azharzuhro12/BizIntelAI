@@ -126,12 +126,14 @@ Tidak ada perubahan kode: `frontend/lib/api.ts` memakai `process.env.NEXT_PUBLIC
 |---|---|
 | Project | `bizintelai-frontend` (LIVE: `https://bizintelai-frontend.vercel.app`) |
 | Root Directory | `frontend` |
-| Framework | Next.js (auto-detect) |
+| Framework | Next.js — eksplisit via `frontend/vercel.json` (`"framework": "nextjs"`) |
 | Environment Variable | `NEXT_PUBLIC_API_URL = https://bizintelai.vercel.app` |
 | Deployment Protection | **Disabled** (default project baru = Vercel Authentication; tanpa ini publik dapat 404/redirect login) |
 | Build / Output | default (`npm run build`; standalone tidak dipakai di Vercel, next.config aman diabaikan) |
 
 `NEXT_PUBLIC_API_URL` di-inline ke bundle client saat **build** → set env var **sebelum** deploy pertama (atau setelah menambahkannya, trigger *Redeploy*).
+
+Pitfall yang sudah dijawab: project yang dibuat via `vercel project add`/CLI (bukan import Git) memiliki `framework: null` di setting, dan deploy CLI **tidak** melakukan auto-detect dari `package.json` — build sukses tapi deployment tanpa route (semua path 404 meski `Deployment Protection` sudah dimatikan). Solusi: `frontend/vercel.json` dengan `"framework": "nextjs"` eksplisit, lalu redeploy (terverifikasi: route `/` static + URL API ter-bake di chunk client).
 
 ## 5. ChromaDB / RAG di disk ephemeral
 
