@@ -1,8 +1,60 @@
 # BizIntel AI — AI-Powered Business Intelligence & Decision Support Agent
 
+[![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![Tests](https://img.shields.io/badge/Tests-226%20%2B%2070%20passing-brightgreen)](#20-testing)
+[![License](https://img.shields.io/badge/License-All%20rights%20reserved-lightgrey)](#23-license)
+
 BizIntel AI is a **portfolio/demo business intelligence platform** for restaurant sales data. It combines a PostgreSQL analytics layer, machine-learning revenue forecasting, anomaly detection, retrieval-augmented generation (RAG), and a LangGraph agentic workflow with tool calling, per-session conversation memory, audit logging, and a deterministic evaluation harness — presented through a custom Next.js BI dashboard with a grounded AI Assistant.
 
-Every number in this README comes from an actual, reproducible run in this repository (see [Testing](#18-testing), [Evaluation](#9-evaluation), and [`docs/data-and-model-reproducibility.md`](docs/data-and-model-reproducibility.md)).
+**🔗 Live demo (free-tier cloud deployment):**
+
+| | URL | What you'll see |
+|---|---|---|
+| **Dashboard** | https://bizintelai-frontend.vercel.app | Full BI dashboard + grounded AI Assistant (chat works live) |
+| **API** | https://bizintelai.vercel.app | REST API · interactive Swagger UI at [`/docs`](https://bizintelai.vercel.app/docs) |
+
+![BizIntel AI dashboard](docs/images/dashboard-light.png)
+
+<details>
+<summary><strong>Live-demo notes (honest limitations of the serverless deployment)</strong></summary>
+
+- The serverless bundle excludes ChromaDB (500 MB/function limit) → **RAG retrieval degrades fail-soft**: policy questions get the controlled "not available" answer instead of retrieved documents. Full RAG runs via the local Docker stack ([Quick Start](#14-quick-start)).
+- Free tier realities: Supabase pauses after ~1 week idle (unpause via dashboard), Vercel functions have cold starts.
+- Deployment architecture & runbook: [`docs/cloud-deployment.md`](docs/cloud-deployment.md).
+
+</details>
+
+Every number in this README comes from an actual, reproducible run in this repository (see [Testing](#20-testing), [Evaluation](#9-evaluation), and [`docs/data-and-model-reproducibility.md`](docs/data-and-model-reproducibility.md)).
+
+## Contents
+
+1. [Project Overview](#1-project-overview)
+2. [Problem](#2-problem)
+3. [Solution](#3-solution)
+4. [Architecture](#4-architecture)
+5. [Key Features](#5-key-features)
+6. [AI Agent & Tool Calling](#6-ai-agent--tool-calling)
+7. [Machine Learning](#7-machine-learning)
+8. [RAG](#8-rag)
+9. [Evaluation](#9-evaluation)
+10. [Dashboard](#10-dashboard)
+11. [Engineering & Security](#11-engineering--security)
+12. [Tech Stack](#12-tech-stack)
+13. [Project Structure](#13-project-structure)
+14. [Quick Start](#14-quick-start)
+15. [API Reference](#15-api-reference)
+16. [Example Questions](#16-example-questions)
+17. [Live Deployment](#17-live-deployment)
+18. [Limitations](#18-limitations)
+19. [Future Improvements](#19-future-improvements)
+20. [Testing](#20-testing)
+21. [Portfolio Disclaimer](#21-portfolio-disclaimer)
+22. [Acknowledgments](#22-acknowledgments)
+23. [License](#23-license)
 
 ## 1. Project Overview
 
@@ -16,7 +68,7 @@ The platform demonstrates an end-to-end data-to-decision pipeline:
 - **Evaluation harness** — deterministic evaluators (no LLM-as-a-judge) for tool selection, numerical accuracy, groundedness, citation correctness, and retrieval Hit@k
 - **Next.js dashboard** — KPI cards, revenue trend with forecast overlay, product/city/monthly breakdowns, anomaly monitoring, and an AI Assistant with Markdown rendering and RAG citations
 
-This is a portfolio project, not a fully deployed enterprise production system (see [Limitations](#16-limitations) and [Portfolio Disclaimer](#19-portfolio-disclaimer)).
+This is a portfolio project, not a fully deployed enterprise production system (see [Limitations](#18-limitations) and [Portfolio Disclaimer](#21-portfolio-disclaimer)).
 
 ## 2. Problem
 
@@ -99,7 +151,7 @@ The agent is not autonomous: it answers one grounded question at a time and take
 
 Modeling was done in the notebook (`notebooks/exploratory-data-analysis-and-predictive-models.ipynb`) on the Kaggle restaurant-sales dataset; artifacts are served by the API **without retraining**.
 
-**Dataset:** 254 sales transactions over 53 days (2022-11-07 → 2022-12-29), total revenue €769,515.86, total quantity 116,995.31 — a small, single-season dataset (see [Limitations](#16-limitations)).
+**Dataset:** 254 sales transactions over 53 days (2022-11-07 → 2022-12-29), total revenue €769,515.86, total quantity 116,995.31 — a small, single-season dataset (see [Limitations](#18-limitations)).
 
 **Revenue forecasting** — recursive multi-step daily forecast with time-series feature engineering (7 features incl. lags/calendar), **chronological** train/test split, three candidates:
 
@@ -191,7 +243,7 @@ Implemented protections (this is not a security certification, and no enterprise
 | Data | PostgreSQL 17 · pandas |
 | Frontend | Next.js 16 · React 19 · TypeScript (strict) · Tailwind CSS 4 · Recharts · react-markdown + remark-gfm |
 | Testing | pytest · Vitest + Testing Library (jsdom) · tsc · ESLint |
-| Infrastructure | Docker · Docker Compose · Git |
+| Infrastructure | Docker · Docker Compose · Vercel · Supabase (managed PostgreSQL) · Git |
 
 ## 13. Project Structure
 
@@ -233,6 +285,13 @@ Runtime/regenerable artifacts (`data/chroma/`, `data/evaluation/latest_*.json`, 
 
 ## 14. Quick Start
 
+### Prerequisites
+
+- **Option A (Docker):** Docker Engine 24+ with Docker Compose — one command, no local toolchain
+- **Option B (Manual):** Python 3.12+ and Node.js 22+ (npm)
+- LLM credentials are **optional** — without them everything works except `/api/chat` (503 `llm_not_configured`)
+- Disk: ~2 GB for Docker images (ML artifacts + ONNX embedding model are bundled)
+
 ### Option A — Docker Compose (full stack, one command)
 
 ```bash
@@ -273,7 +332,34 @@ Frontend on a different port? Start the backend with `BIZINTEL_CORS_ORIGINS="htt
 
 **Environment variables** — see [`.env.example`](.env.example) for the full annotated list: `POSTGRES_USER/PASSWORD/DB/PORT`, optional `PG*` overrides, `ANTHROPIC_AUTH_TOKEN` + `ANTHROPIC_BASE_URL` + `ANTHROPIC_MODEL` (or `ANTHROPIC_API_KEY`) for the LLM, `BIZINTEL_CORS_ORIGINS`, and the compose-consumed `FRONTEND_PORT` / `NEXT_PUBLIC_API_URL`.
 
-## 15. Example Questions
+## 15. API Reference
+
+All endpoints are prefixed `/api` and return typed JSON with explicit error contracts (no faked success). Interactive docs: Swagger UI at `/docs` (OpenAPI at `/openapi.json`).
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/health` | Service status, DB connectivity, row counts |
+| `GET` | `/api/analytics/kpi` | Headline KPIs: total revenue, quantity, transactions, period |
+| `GET` | `/api/analytics/revenue` | Daily revenue series (53 days) |
+| `GET` | `/api/analytics/products` | Revenue by product (ranked) |
+| `GET` | `/api/analytics/cities` | Revenue by city (ranked) |
+| `GET` | `/api/analytics/monthly` | Monthly aggregates (view `v_monthly_metrics`) |
+| `GET` | `/api/analytics/anomalies` | Anomaly-flagged days (Isolation Forest labels) |
+| `GET` | `/api/forecast/revenue?days=N` | ML revenue forecast, 1–30 days (joblib artifact) |
+| `POST` | `/api/chat` | Grounded agent conversation (needs `ANTHROPIC_*` env; 503 otherwise) |
+| `POST` | `/api/rag/search` | Direct RAG retrieval (debug/introspection) |
+| `GET` | `/api/agent/runs/{session_id}` | Agent run audit trail (status, tools, latency) |
+
+Example:
+
+```bash
+curl -X POST http://localhost:8020/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"What is the total revenue?","session_id":"demo-1"}'
+# → {"answer":"Total revenue adalah 769.515,86 ...","tools_used":["get_kpi"],"session_id":"demo-1"}
+```
+
+## 16. Example Questions
 
 Ask these in the AI Assistant:
 
@@ -288,7 +374,21 @@ Ask these in the AI Assistant:
 
 **Multi-tool example** (implemented and verified): *"What is the current revenue situation and the 3-day forecast?"* → the agent calls `get_kpi` **and** `get_revenue_forecast`, then composes one grounded answer with both tool chips displayed.
 
-## 16. Limitations
+## 17. Live Deployment
+
+The project runs on a free-tier cloud stack (no paid services, no credit card):
+
+| Component | Platform | URL |
+|---|---|---|
+| API (FastAPI serverless, Python 3.13, Singapore region) | Vercel — project `bizintelai` | https://bizintelai.vercel.app |
+| Dashboard (Next.js) | Vercel — project `bizintelai-frontend` | https://bizintelai-frontend.vercel.app |
+| PostgreSQL (session pooler, TLS) | Supabase free tier | — |
+
+- Deploy mechanism: `api/index.py` re-exports the FastAPI app; `vercel.json` pins the `fastapi` framework preset; requirements are slimmed for the 500 MB/function bundle cap (ChromaDB excluded → RAG fail-soft serverless, full RAG via local Docker)
+- CORS allowlist covers the dashboard origin; secrets live only in platform env vars
+- Full runbook (Supabase setup → Vercel projects → env vars → verification): [`docs/cloud-deployment.md`](docs/cloud-deployment.md)
+
+## 18. Limitations
 
 1. **Dataset is small** — 254 transactions over 53 days; not a basis for business generalization.
 2. **Historical period is only Nov–Dec 2022** — a single season; calendar-feature extrapolation beyond it is unreliable.
@@ -300,7 +400,7 @@ Ask these in the AI Assistant:
 8. **This is a portfolio/demo system** — single-user, no authentication, not a fully deployed enterprise BI product.
 9. **No Power BI dependency** — the dashboard is a custom Next.js application.
 
-## 17. Future Improvements
+## 19. Future Improvements
 
 Future work, consistent with the current architecture:
 
@@ -312,7 +412,7 @@ Future work, consistent with the current architecture:
 - A larger, more comprehensive evaluation dataset
 - Monitoring and model-retraining pipeline
 
-## 18. Testing
+## 20. Testing
 
 | Suite | Command | Last result |
 |---|---|---|
@@ -324,9 +424,19 @@ Future work, consistent with the current architecture:
 | Agent ground-truth eval | `python3 scripts/evaluate_agent.py` | 21/21 values |
 | Agent live eval | `python3 scripts/evaluate_agent.py --mode live` | see [Evaluation](#9-evaluation) |
 
-## 19. Portfolio Disclaimer
+## 21. Portfolio Disclaimer
 
 BizIntel AI is a **portfolio/demo project** built to demonstrate data engineering, ML serving, agentic AI, RAG, evaluation, and frontend engineering practices on a real (small) dataset. It is not a fully deployed enterprise BI product, not connected to live business systems, and its knowledge base is synthetic. Its known limitations — including the extrapolation behavior of the forecast model — are documented above deliberately, because representing systems honestly is part of the engineering.
+
+## 22. Acknowledgments
+
+- **Dataset:** [Restaurant Sales Data](https://www.kaggle.com/datasets/rohitgrewal/restaurant-sales-data) by Rohit Grewal on Kaggle — the origin of every number in this project
+- **Open-source stack:** FastAPI, Next.js, React, LangGraph/LangChain, ChromaDB, scikit-learn, PostgreSQL, Recharts, Tailwind CSS, pytest, Vitest — this project stands entirely on them
+- **LLM:** GLM (Z.ai) served through an Anthropic-compatible endpoint
+
+## 23. License
+
+**All rights reserved.** This repository currently carries no open-source license, so no reuse, modification, or redistribution is granted by default. The code is published for viewing and evaluation (portfolio) purposes. If you want to use part of it, please open an issue or reach out via GitHub first.
 
 ---
 
