@@ -7,10 +7,15 @@ dan bukan LLM. Model terunduh sekali ke cache user saat pemakaian pertama.
 
 from functools import lru_cache
 
-from chromadb.utils import embedding_functions
+try:
+    from chromadb.utils import embedding_functions
+except ImportError:  # pragma: no cover - bundle Vercel tanpa chromadb
+    embedding_functions = None
 
 
 @lru_cache(maxsize=1)
 def get_embedding_function():
     """Embedding function lokal (singleton)."""
+    if embedding_functions is None:
+        raise RuntimeError("chromadb tidak terpasang di environment ini")
     return embedding_functions.DefaultEmbeddingFunction()

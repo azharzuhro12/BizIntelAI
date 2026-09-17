@@ -4,9 +4,15 @@ Target topology for the portfolio/demo deployment — **no code changes required
 
 ```
 GitHub (repo) → Supabase PostgreSQL (infrastruktur PG murni, TANPA Supabase SDK)
-             → Render FastAPI backend (Docker, free web service)
-             → Vercel Next.js frontend (free)
+             → Vercel FastAPI backend (Python 3.13 serverless, project "bizintelai")
+             → Vercel Next.js frontend (project "bizintelai-frontend")
 ```
+
+> **STATUS LIVE (2026-09-17):** kedua komponen berjalan di Vercel (Hobby) —
+> API `https://bizintelai.vercel.app` · dashboard `https://bizintelai-frontend.vercel.app`.
+> Backend di Vercel mem-bundle tanpa chromadb (batas 500 MB/function) sehingga
+> `/api/rag` fail-soft — lihat §3. Jalur Render (§3-alt, Docker + RAG penuh)
+> tetap tersedia sebagai alternatif.
 
 Semua komponen aplikasi tidak berubah: psycopg2 tetap dipakai (Supabase hanya menggantikan "mesin" PostgreSQL), LangGraph/RAG/ML/schema/API kontrak utuh. Panduan langkah-manual (akun dibuat oleh Anda, bukan otomatis).
 
@@ -66,7 +72,23 @@ Lalu uji:
 
 Mekanisme ini sudah diverifikasi lokal (backend dijalankan murni dengan `PG*` env — semua endpoint PASS; `/api/chat` diverifikasi grounded end-to-end).
 
-## 3. Render — backend (free web service, Docker)
+## 3. Vercel — backend (LIVE)
+
+Dipakai sekarang. Satu repo, project terpisah untuk backend (root) & frontend (`frontend/`).
+
+| Komponen | Isi |
+|---|---|
+| Entrypoint | `api/index.py` — re-export `app` dari `backend.app.main` (Vercel hanya memindai functions di `api/`; uvicorn lokal/Docker tidak berubah) |
+| `vercel.json` | `framework: "fastapi"` eksplisit (routing catch-all — TANPA ini hanya `/api` & `/api/index` yang ter-route), `fluid`, `regions: ["sin1"]`, `functions["api/index.py"]` maxDuration 60 |
+| Deps | `requirements.txt` root = **generated** oleh `scripts/sync-requirements.sh` dari `backend/requirements.txt` (satu sumber kebenaran). Self-contained (parser Vercel tanpa `-r`) + filter `chromadb`/`pytest`/`uvicorn[standard]` demi batas bundle 500 MB |
+| RAG | **fail-soft** di serverless: `backend/app/rag/vectorstore.py` & `embeddings.py` guard `ImportError`; `/api/rag` dan grounding agent mengembalikan pesan terkontrol, bukan 500. RAG penuh → jalur Render (§3-alt) |
+| Python | `.python-version` = 3.13 |
+| Env vars (project settings) | `PG*` (Supabase session pooler), `PGSSLMODE=require`, `BIZINTEL_CORS_ORIGINS`, `ANTHROPIC_AUTH_TOKEN`/`BASE_URL`/`MODEL` |
+| Deploy | `cd <repo-root> && npx vercel deploy --prod --yes` (CLI; ubah env var → wajib redeploy agar terpakai) |
+
+Catatan pitfall yang sudah dijawab (jangan diulang): `functions` pattern harus menunjuk file di `api/`; pyproject root tanpa tabel `[project]` membuat `uv lock` gagal; deteksi framework perlu literal `fastapi` di requirements (flag `-r` tidak dipindai); deployment protection project baru default ON (matikan di Settings → Deployment Protection).
+
+## 3-alt. Render — backend alternatif (Docker, RAG penuh)
 
 Konfigurasi tersedia dua cara — **Blueprint** (repo sudah punya `render.yaml`) atau manual:
 
@@ -102,9 +124,11 @@ Tidak ada perubahan kode: `frontend/lib/api.ts` memakai `process.env.NEXT_PUBLIC
 
 | Setting | Nilai |
 |---|---|
+| Project | `bizintelai-frontend` (LIVE: `https://bizintelai-frontend.vercel.app`) |
 | Root Directory | `frontend` |
 | Framework | Next.js (auto-detect) |
-| Environment Variable | `NEXT_PUBLIC_API_URL = https://<nama-service-render>.onrender.com` |
+| Environment Variable | `NEXT_PUBLIC_API_URL = https://bizintelai.vercel.app` |
+| Deployment Protection | **Disabled** (default project baru = Vercel Authentication; tanpa ini publik dapat 404/redirect login) |
 | Build / Output | default (`npm run build`; standalone tidak dipakai di Vercel, next.config aman diabaikan) |
 
 `NEXT_PUBLIC_API_URL` di-inline ke bundle client saat **build** → set env var **sebelum** deploy pertama (atau setelah menambahkannya, trigger *Redeploy*).

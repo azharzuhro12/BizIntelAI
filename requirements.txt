@@ -1,12 +1,39 @@
-# Deps deployment Vercel untuk backend BizIntel AI.
-# Runtime Python Vercel mencari requirements.txt di root project; satu
-# sumber pin tetap backend/requirements.txt agar lokal, Docker, dan
-# Vercel memakai versi persis identik (tidak ada duplikasi pin).
-#
-# Baris "fastapi" literal di bawah diperlukan sebagai pemicu deteksi
-# framework preset FastAPI (Vercel memindai dependensi literal di
-# requirements.txt/pyproject.toml; direktif -r tidak ikut dipindai).
-# Constraint longgar ini tidak mengubah versi terpasang: pin persis
-# fastapi==0.141.1 dari backend/requirements.txt tetap yang menang.
-fastapi>=0.117.1
--r backend/requirements.txt
+# AUTO-GENERATED dari backend/requirements.txt (satu sumber kebenaran)
+# minus filter bundle serverless — JANGAN edit manual.
+# Setelah mengubah backend/requirements.txt, jalankan:
+#   scripts/sync-requirements.sh
+# Self-contained (parser Vercel tanpa -r); chromadb/pytest/uvicorn[standard]
+# difilter demi batas 500MB (RAG fail-soft di kode; lihat header script).
+# Baris fastapi literal di bawah sekaligus memicu deteksi preset FastAPI.
+
+# BizIntel AI - backend dependencies
+# Python 3.14 (host). Versi = versi yang terverifikasi berjalan.
+
+fastapi==0.141.1
+pydantic==2.13.4
+
+# Database
+psycopg2-binary==2.9.13
+
+# Model inference
+joblib==1.6.0
+pandas==3.0.5
+# CATATAN scikit-learn:
+# Artefak ML disimpan dengan sklearn 1.6.1 (environment Kaggle), host memakai 1.9.1.
+# Sudah diverifikasi: load + predict() berfungsi identik di 1.9.1 (LinearRegression
+# menyimpan coef_/intercept_ di pickle; mismatch versi hanya memengaruhi repr/get_params).
+# Tidak ada pin 1.6.1 karena wheel cp314 tidak tersedia untuk sklearn 1.6.1.
+scikit-learn==1.9.1
+
+# AI Agent - Phase 1 (LangGraph + SQL analytics tools, read-only)
+# Provider LLM mengikuti konfigurasi environment yang ada di mesin ini:
+# endpoint Anthropic-compatible (lihat backend/app/agent/llm.py & docs/agent-phase1.md).
+langgraph==1.2.11
+langchain-core==1.6.3
+langchain-anthropic==1.7.2
+
+# RAG business knowledge - Phase 3 (ChromaDB persist + embedding ONNX lokal
+# all-MiniLM-L6-v2 bawaan ChromaDB: tanpa torch, tanpa API key, bukan LLM)
+
+# Testing (dev)
+httpx==0.28.1

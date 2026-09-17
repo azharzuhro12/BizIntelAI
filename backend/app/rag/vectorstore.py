@@ -4,9 +4,14 @@ Koleksi khusus business knowledge (tidak dicampur data analitik SQL/ML).
 Ruang vektor: cosine, sehingga similarity = 1 - distance.
 """
 
+from __future__ import annotations
+
 from functools import lru_cache
 
-import chromadb
+try:
+    import chromadb
+except ImportError:  # pragma: no cover - bundle Vercel tanpa chromadb
+    chromadb = None
 
 from .config import CHROMA_DIR, COLLECTION_NAME
 from .embeddings import get_embedding_function
@@ -15,6 +20,10 @@ from .embeddings import get_embedding_function
 @lru_cache(maxsize=1)
 def get_client() -> chromadb.api.ClientAPI:
     """Client ChromaDB persisten (path tetap, di-cache per proses)."""
+    if chromadb is None:
+        # Paket tidak terpasang (deployment ramping tanpa stack RAG);
+        # di-swallow oleh get_collection(create=False) sebagai fail-soft.
+        raise RuntimeError("chromadb tidak terpasang di environment ini")
     CHROMA_DIR.mkdir(parents=True, exist_ok=True)
     return chromadb.PersistentClient(path=str(CHROMA_DIR))
 

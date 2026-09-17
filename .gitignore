@@ -27,3 +27,6 @@ frontend/.env.local
 frontend/.env*.local
 frontend/next-env.d.ts
 frontend/*.tsbuildinfo
+.vercel
+.env*
+!.env.example
