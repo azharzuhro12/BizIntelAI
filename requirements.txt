@@ -2,4 +2,11 @@
 # Runtime Python Vercel mencari requirements.txt di root project; satu
 # sumber pin tetap backend/requirements.txt agar lokal, Docker, dan
 # Vercel memakai versi persis identik (tidak ada duplikasi pin).
+#
+# Baris "fastapi" literal di bawah diperlukan sebagai pemicu deteksi
+# framework preset FastAPI (Vercel memindai dependensi literal di
+# requirements.txt/pyproject.toml; direktif -r tidak ikut dipindai).
+# Constraint longgar ini tidak mengubah versi terpasang: pin persis
+# fastapi==0.141.1 dari backend/requirements.txt tetap yang menang.
+fastapi>=0.117.1
 -r backend/requirements.txt
