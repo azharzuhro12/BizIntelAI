@@ -15,7 +15,7 @@
 #      - uvicorn[standard] -> server ASGI tidak dipakai di serverless
 #                          Vercel (runtime Vercel membungkus app ASGI langsung)
 #      - pytest          -> hanya pengujian lokal
-#    Jalur lokal/Docker/Render TIDAK terdampak: mereka membaca
+#    Jalur lokal/Docker TIDAK terdampak: mereka membaca
 #    backend/requirements.txt langsung.
 # File ini di-generate — JANGAN edit manual.
 set -euo pipefail

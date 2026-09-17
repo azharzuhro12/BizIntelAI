@@ -1,7 +1,7 @@
 #!/bin/sh
 # Entrypoint container backend BizIntel AI:
 # startup checks (DB -> schema -> data -> RAG) lalu uvicorn di 0.0.0.0.
-# Port: Render menyuntikkan PORT dan me-route traffic ke situ; lokal /
+# Port: platform yang menyuntikkan env PORT akan diikuti; lokal /
 # docker-compose tetap 8020 via default ${PORT:-8020}.
 set -e
 
