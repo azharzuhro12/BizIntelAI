@@ -5,8 +5,8 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![Tests](https://img.shields.io/badge/Tests-226%20%2B%2070%20passing-brightgreen)](#20-testing)
-[![License](https://img.shields.io/badge/License-All%20rights%20reserved-lightgrey)](#23-license)
+[![Tests](https://img.shields.io/badge/Tests-226%20%2B%2070%20passing-brightgreen)](#15-testing)
+[![License](https://img.shields.io/badge/License-All%20rights%20reserved-lightgrey)](#17-license)
 
 BizIntel AI is a **portfolio/demo business intelligence platform** for restaurant sales data. It combines a PostgreSQL analytics layer, machine-learning revenue forecasting, anomaly detection, retrieval-augmented generation (RAG), and a LangGraph agentic workflow with tool calling, per-session conversation memory, audit logging, and a deterministic evaluation harness — presented through a custom Next.js BI dashboard with a grounded AI Assistant.
 
@@ -22,74 +22,49 @@ BizIntel AI is a **portfolio/demo business intelligence platform** for restauran
 <details>
 <summary><strong>Live-demo notes (honest limitations of the serverless deployment)</strong></summary>
 
-- The serverless bundle excludes ChromaDB (500 MB/function limit) → **RAG retrieval degrades fail-soft**: policy questions get the controlled "not available" answer instead of retrieved documents. Full RAG runs via the local Docker stack ([Quick Start](#14-quick-start)).
+- The serverless bundle excludes ChromaDB (500 MB/function limit) → **RAG retrieval degrades fail-soft**: policy questions get the controlled "not available" answer instead of retrieved documents. Full RAG runs via the local Docker stack ([Quick Start](#11-quick-start)).
 - Free tier realities: Supabase pauses after ~1 week idle (unpause via dashboard), Vercel functions have cold starts.
 - Deployment architecture & runbook: [`docs/cloud-deployment.md`](docs/cloud-deployment.md).
 
 </details>
 
-Every number in this README comes from an actual, reproducible run in this repository (see [Testing](#20-testing), [Evaluation](#9-evaluation), and [`docs/data-and-model-reproducibility.md`](docs/data-and-model-reproducibility.md)).
+Every number in this README comes from an actual, reproducible run in this repository (see [Testing](#15-testing), [Evaluation](#7-evaluation), and [`docs/data-and-model-reproducibility.md`](docs/data-and-model-reproducibility.md)).
 
 ## Contents
 
-1. [Project Overview](#1-project-overview)
-2. [Problem](#2-problem)
-3. [Solution](#3-solution)
-4. [Architecture](#4-architecture)
-5. [Key Features](#5-key-features)
-6. [AI Agent & Tool Calling](#6-ai-agent--tool-calling)
-7. [Machine Learning](#7-machine-learning)
-8. [RAG](#8-rag)
-9. [Evaluation](#9-evaluation)
-10. [Dashboard](#10-dashboard)
-11. [Engineering & Security](#11-engineering--security)
-12. [Tech Stack](#12-tech-stack)
-13. [Project Structure](#13-project-structure)
-14. [Quick Start](#14-quick-start)
-15. [API Reference](#15-api-reference)
-16. [Example Questions](#16-example-questions)
-17. [Live Deployment](#17-live-deployment)
-18. [Limitations](#18-limitations)
-19. [Future Improvements](#19-future-improvements)
-20. [Testing](#20-testing)
-21. [Portfolio Disclaimer](#21-portfolio-disclaimer)
-22. [Acknowledgments](#22-acknowledgments)
-23. [License](#23-license)
+1. [Overview](#1-overview)
+2. [Architecture](#2-architecture)
+3. [Features & Dashboard](#3-features--dashboard)
+4. [AI Agent & Tool Calling](#4-ai-agent--tool-calling)
+5. [Machine Learning](#5-machine-learning)
+6. [RAG](#6-rag)
+7. [Evaluation](#7-evaluation)
+8. [Engineering & Security](#8-engineering--security)
+9. [Tech Stack](#9-tech-stack)
+10. [Project Structure](#10-project-structure)
+11. [Quick Start](#11-quick-start)
+12. [API Reference](#12-api-reference)
+13. [Live Deployment](#13-live-deployment)
+14. [Limitations & Future Work](#14-limitations--future-work)
+15. [Testing](#15-testing)
+16. [Acknowledgments](#16-acknowledgments)
+17. [License](#17-license)
 
-## 1. Project Overview
+## 1. Overview
 
-The platform demonstrates an end-to-end data-to-decision pipeline:
+BizIntel AI answers business questions about restaurant sales data with numbers that are always traceable to a query, a model artifact, or a retrieved document.
 
-- **ETL & modeling** — a Kaggle notebook produces clean datasets, forecast models, and anomaly labels
-- **PostgreSQL** — 254 sales transactions and 53 daily metric records behind an idempotent schema
-- **FastAPI** — parameterized analytics, forecasting, and chat endpoints with explicit error contracts
-- **LangGraph AI agent** — a single agent with 8 measured tools (SQL analytics, ML forecast, RAG) that answers business questions *only* from tool output
-- **Session memory & audit logging** — conversation history per `session_id`, plus a per-run audit trail in PostgreSQL
-- **Evaluation harness** — deterministic evaluators (no LLM-as-a-judge) for tool selection, numerical accuracy, groundedness, citation correctness, and retrieval Hit@k
-- **Next.js dashboard** — KPI cards, revenue trend with forecast overlay, product/city/monthly breakdowns, anomaly monitoring, and an AI Assistant with Markdown rendering and RAG citations
-
-This is a portfolio project, not a fully deployed enterprise production system (see [Limitations](#18-limitations) and [Portfolio Disclaimer](#21-portfolio-disclaimer)).
-
-## 2. Problem
-
-Business stakeholders have questions ("What was December revenue?", "What will revenue be next week?", "What is the promotion policy?"), but the answers live in different systems:
-
-- Historical metrics sit in a SQL database and require writing queries
-- Forecasts require running a model with the right features
-- Company policies live in documents nobody can search
-- Generic chatbots hallucinate numbers when asked any of the above
-
-## 3. Solution
-
-One conversational interface backed by a **grounded agent**:
+Stakeholder questions ("What was December revenue?", "What will revenue be next week?", "What is the promotion policy?") normally require three different systems — SQL, an ML model, document search — and generic chatbots hallucinate numbers when asked any of them. This project replaces that with one conversational interface backed by a **grounded agent**:
 
 - The agent **selects tools** per question — SQL analytics, the ML forecast artifact, or RAG retrieval — and composes the answer **only from tool output**
-- Numbers are traceable: every figure in a response comes from a query, a model artifact, or a retrieved document
-- RAG answers carry `[file.md]` citations; the dashboard displays them as source chips
-- Out-of-scope questions (profit margins, customer data, anything not in the database) are answered with an explicit "not available" contract instead of fabrication — verified by tests
-- The dashboard visualizes the same grounded data (KPIs, trends, forecast, anomalies) so the agent's answers can be cross-checked visually
+- RAG answers carry `[file.md]` citations; out-of-scope questions (profit margins, customer data, anything not in the database) get an explicit "not available" contract instead of fabrication — verified by tests
+- The dashboard visualizes the same grounded data (KPIs, trends, forecast, anomalies), so every agent answer can be cross-checked visually
 
-## 4. Architecture
+End-to-end pipeline: Kaggle notebook (EDA + ML) → clean datasets → PostgreSQL (254 sales / 53 daily metrics, idempotent schema) → FastAPI analytics & chat endpoints → LangGraph agent (8 tools) with per-session memory and audit logging → deterministic evaluation harness → Next.js dashboard.
+
+This is a portfolio project, not an enterprise production system (see [Limitations & Future Work](#14-limitations--future-work)).
+
+## 2. Architecture
 
 ```mermaid
 flowchart TD
@@ -111,18 +86,20 @@ flowchart TD
 
 One agent, one graph — no multi-agent orchestration, no MCP. The LLM is used for tool selection and answer composition; every number originates from a tool. Data flow into the system: `notebooks/` (EDA + ML) → `data/processed/*.csv` → `scripts/import_data.py` → PostgreSQL; `data/knowledge/*.md` → RAG ingest (chunk 700/80, local ONNX embeddings) → ChromaDB.
 
-## 5. Key Features
+## 3. Features & Dashboard
 
-- **BI dashboard** — KPI cards (revenue, transactions, quantity, anomaly watch), daily revenue trend, 7-day forecast overlay, top products, revenue by city, monthly aggregate, anomaly monitoring
-- **AI Assistant** — grounded conversational analytics with session persistence, tool-visibility chips, RAG source citations, and Markdown-rendered responses (tables, bold, lists, code)
+Custom **Next.js 16** (App Router) + **React 19** + **TypeScript (strict)** + **Tailwind CSS 4** + **Recharts** frontend:
+
+- **KPI cards** (revenue, transactions, quantity, anomaly watch) with independent loading/error/empty states per widget
+- Daily revenue trend with **7-day model forecast** overlay (dashed; negative extrapolated values shown honestly with a limitation note — no clamping)
+- Top products, revenue by city, monthly aggregate (single-hue bars, CVD-safe palette); anomaly monitoring panel (flags from `daily_metrics`)
+- **AI Assistant** panel — session persistence, tool-visibility chips, RAG source chips, Markdown-rendered responses (GFM tables, bold, lists, code via `react-markdown` + `remark-gfm` — safe by default, no raw HTML; user messages stay plain text), sample questions, responsive mobile drawer
 - **Explicit failure contracts** — `llm_not_configured` (503), `forecast_model_unavailable`; the API never fakes success
 - **Fail-safe degradation** — without LLM credentials the dashboard, forecast, anomalies, and all analytics endpoints still work; only `/api/chat` returns 503
-- **Per-widget states** — loading/error/empty handled independently for every dashboard card
-- **Accessibility** — every chart has a twin data table (`<details>`), labelled inputs, `aria-live` chat thread
-- **Responsive** — desktop layout with sticky assistant sidebar; mobile gets a drawer-based assistant
-- **Dark mode** — follows the system color scheme
+- **Accessibility** — every chart ships a twin data table (`<details>`), labelled inputs, `aria-live` chat thread
+- **Responsive & dark mode** — sticky assistant sidebar on desktop, drawer on mobile; follows the system color scheme
 
-## 6. AI Agent & Tool Calling
+## 4. AI Agent & Tool Calling
 
 A single LangGraph agent (`backend/app/agent/`) backed by GLM-5.3 (Anthropic-compatible endpoint). The system prompt enforces strict routing and grounding rules; the graph extracts text blocks from the model response (GLM returns thinking blocks by default).
 
@@ -147,11 +124,24 @@ LangGraph routes each request to the appropriate tool and supports **multi-tool 
 
 The agent is not autonomous: it answers one grounded question at a time and takes no actions besides read-only retrieval.
 
-## 7. Machine Learning
+**Try these in the AI Assistant** (live demo or local):
+
+- "What is the total revenue?"
+- "Which product generated the most revenue?"
+- "Which city generated the most revenue?"
+- "What was the revenue in December?"
+- "Predict revenue for the next 3 days."
+- "Which dates were flagged as anomalies?"
+- "What is the promotion policy?"
+- "What inventory guideline applies?"
+
+**Multi-tool example** (implemented and verified): *"What is the current revenue situation and the 3-day forecast?"* → the agent calls `get_kpi` **and** `get_revenue_forecast`, then composes one grounded answer with both tool chips displayed.
+
+## 5. Machine Learning
 
 Modeling was done in the notebook (`notebooks/exploratory-data-analysis-and-predictive-models.ipynb`) on the Kaggle restaurant-sales dataset; artifacts are served by the API **without retraining**.
 
-**Dataset:** 254 sales transactions over 53 days (2022-11-07 → 2022-12-29), total revenue €769,515.86, total quantity 116,995.31 — a small, single-season dataset (see [Limitations](#18-limitations)).
+**Dataset:** 254 sales transactions over 53 days (2022-11-07 → 2022-12-29), total revenue €769,515.86, total quantity 116,995.31 — a small, single-season dataset (see [Limitations](#14-limitations--future-work)).
 
 **Revenue forecasting** — recursive multi-step daily forecast with time-series feature engineering (7 features incl. lags/calendar), **chronological** train/test split, three candidates:
 
@@ -169,7 +159,7 @@ These results are specific to this dataset and experiment — this is not a prod
 
 > These anomaly labels are exploratory signals, not proof of fraud, data errors, or business misconduct.
 
-## 8. RAG
+## 6. RAG
 
 Retrieval-augmented generation over business policy documents, included to demonstrate the architecture and workflow end-to-end:
 
@@ -181,7 +171,7 @@ Retrieval-augmented generation over business policy documents, included to demon
 
 **Important:** the current knowledge base contains **5 synthetic/demo business policy documents** (`data/knowledge/*.md`: promotion, inventory, product, sales, business guidelines). They are **not real company policies** — they exist so the retrieval workflow can be demonstrated honestly.
 
-## 9. Evaluation
+## 7. Evaluation
 
 A deterministic evaluation harness (`backend/app/evaluation/`, `scripts/evaluate_agent.py`) — **no LLM-as-a-judge**. It checks tool selection (set comparison), strict multi-format numerical parsing, conservative groundedness (1-step derived arithmetic allowed), citation correctness against actual retrieval metadata, out-of-domain/prompt-injection safety, and retrieval Hit@k against ChromaDB directly.
 
@@ -205,19 +195,7 @@ Best observed run reached multi-tool 5/5 and citation 9/9; live results vary bet
 
 These metrics describe performance **on this project's test cases and live LLM runs** — they are not a universal model accuracy claim, and no overall score is implied.
 
-## 10. Dashboard
-
-Custom **Next.js 16** (App Router) + **React 19** + **TypeScript (strict)** + **Tailwind CSS 4** + **Recharts** frontend:
-
-- KPI cards with independent loading/error/empty states
-- Daily revenue trend with **7-day model forecast** overlay (dashed; negative extrapolated values shown honestly with a limitation note)
-- Top products, revenue by city, monthly aggregate (single-hue bars, CVD-safe palette)
-- Anomaly monitoring panel (flags from `daily_metrics`)
-- **AI Assistant** panel: session persistence, tool chips (`tools_used`), RAG source chips, loading/error states, sample questions, responsive mobile drawer
-- Assistant responses render **Markdown** (GFM tables, bold, lists, code) via `react-markdown` + `remark-gfm` — safe by default (no raw HTML execution); user messages stay plain text
-- Every chart ships an accessible twin data table; dark mode follows the system
-
-## 11. Engineering & Security
+## 8. Engineering & Security
 
 Implemented protections (this is not a security certification, and no enterprise compliance is claimed):
 
@@ -232,7 +210,7 @@ Implemented protections (this is not a security certification, and no enterprise
 - **Docker hardening** — non-root frontend container, fail-closed startup checks (DB wait → schema → import → RAG ingest)
 - Tests at every layer: 226 backend, 70 frontend, plus the deterministic evaluation
 
-## 12. Tech Stack
+## 9. Tech Stack
 
 | Layer | Technologies |
 |---|---|
@@ -245,7 +223,7 @@ Implemented protections (this is not a security certification, and no enterprise
 | Testing | pytest · Vitest + Testing Library (jsdom) · tsc · ESLint |
 | Infrastructure | Docker · Docker Compose · Vercel · Supabase (managed PostgreSQL) · Git |
 
-## 13. Project Structure
+## 10. Project Structure
 
 ```
 BizIntelAI/
@@ -283,7 +261,7 @@ BizIntelAI/
 
 Runtime/regenerable artifacts (`data/chroma/`, `data/evaluation/latest_*.json`, `node_modules/`, `.next/`, caches) are git-ignored.
 
-## 14. Quick Start
+## 11. Quick Start
 
 ### Prerequisites
 
@@ -332,7 +310,7 @@ Frontend on a different port? Start the backend with `BIZINTEL_CORS_ORIGINS="htt
 
 **Environment variables** — see [`.env.example`](.env.example) for the full annotated list: `POSTGRES_USER/PASSWORD/DB/PORT`, optional `PG*` overrides, `ANTHROPIC_AUTH_TOKEN` + `ANTHROPIC_BASE_URL` + `ANTHROPIC_MODEL` (or `ANTHROPIC_API_KEY`) for the LLM, `BIZINTEL_CORS_ORIGINS`, and the compose-consumed `FRONTEND_PORT` / `NEXT_PUBLIC_API_URL`.
 
-## 15. API Reference
+## 12. API Reference
 
 All endpoints are prefixed `/api` and return typed JSON with explicit error contracts (no faked success). Interactive docs: Swagger UI at `/docs` (OpenAPI at `/openapi.json`).
 
@@ -359,22 +337,7 @@ curl -X POST http://localhost:8020/api/chat \
 # → {"answer":"Total revenue adalah 769.515,86 ...","tools_used":["get_kpi"],"session_id":"demo-1"}
 ```
 
-## 16. Example Questions
-
-Ask these in the AI Assistant:
-
-- "What is the total revenue?"
-- "Which product generated the most revenue?"
-- "Which city generated the most revenue?"
-- "What was the revenue in December?"
-- "Predict revenue for the next 3 days."
-- "Which dates were flagged as anomalies?"
-- "What is the promotion policy?"
-- "What inventory guideline applies?"
-
-**Multi-tool example** (implemented and verified): *"What is the current revenue situation and the 3-day forecast?"* → the agent calls `get_kpi` **and** `get_revenue_forecast`, then composes one grounded answer with both tool chips displayed.
-
-## 17. Live Deployment
+## 13. Live Deployment
 
 The project runs on a free-tier cloud stack (no paid services, no credit card):
 
@@ -388,7 +351,7 @@ The project runs on a free-tier cloud stack (no paid services, no credit card):
 - CORS allowlist covers the dashboard origin; secrets live only in platform env vars
 - Full runbook (Supabase setup → Vercel projects → env vars → verification): [`docs/cloud-deployment.md`](docs/cloud-deployment.md)
 
-## 18. Limitations
+## 14. Limitations & Future Work
 
 1. **Dataset is small** — 254 transactions over 53 days; not a basis for business generalization.
 2. **Historical period is only Nov–Dec 2022** — a single season; calendar-feature extrapolation beyond it is unreliable.
@@ -397,10 +360,7 @@ The project runs on a free-tier cloud stack (no paid services, no credit card):
 5. **Anomaly detection is exploratory** — statistical labels without ground truth; not evidence of fraud or errors.
 6. **Evaluation is test-set-specific** — metrics reflect this project's 23 cases and live runs, not universal accuracy.
 7. **GLM-5.3 requires configured LLM credentials** — chat is unavailable without them (rest of the app still works).
-8. **This is a portfolio/demo system** — single-user, no authentication, not a fully deployed enterprise BI product.
-9. **No Power BI dependency** — the dashboard is a custom Next.js application.
-
-## 19. Future Improvements
+8. **Portfolio/demo system** — single-user, no authentication, not an enterprise BI product.
 
 Future work, consistent with the current architecture:
 
@@ -412,7 +372,9 @@ Future work, consistent with the current architecture:
 - A larger, more comprehensive evaluation dataset
 - Monitoring and model-retraining pipeline
 
-## 20. Testing
+> BizIntel AI is a portfolio project built to demonstrate data engineering, ML serving, agentic AI, RAG, evaluation, and frontend engineering practices on a real (small) dataset. Its known limitations are documented above deliberately, because representing systems honestly is part of the engineering.
+
+## 15. Testing
 
 | Suite | Command | Last result |
 |---|---|---|
@@ -422,19 +384,15 @@ Future work, consistent with the current architecture:
 | ESLint | `cd frontend && npm run lint` | clean |
 | Production build | `cd frontend && npm run build` | success (standalone) |
 | Agent ground-truth eval | `python3 scripts/evaluate_agent.py` | 21/21 values |
-| Agent live eval | `python3 scripts/evaluate_agent.py --mode live` | see [Evaluation](#9-evaluation) |
+| Agent live eval | `python3 scripts/evaluate_agent.py --mode live` | see [Evaluation](#7-evaluation) |
 
-## 21. Portfolio Disclaimer
-
-BizIntel AI is a **portfolio/demo project** built to demonstrate data engineering, ML serving, agentic AI, RAG, evaluation, and frontend engineering practices on a real (small) dataset. It is not a fully deployed enterprise BI product, not connected to live business systems, and its knowledge base is synthetic. Its known limitations — including the extrapolation behavior of the forecast model — are documented above deliberately, because representing systems honestly is part of the engineering.
-
-## 22. Acknowledgments
+## 16. Acknowledgments
 
 - **Dataset:** [Restaurant Sales Data](https://www.kaggle.com/datasets/rohitgrewal/restaurant-sales-data) by Rohit Grewal on Kaggle — the origin of every number in this project
 - **Open-source stack:** FastAPI, Next.js, React, LangGraph/LangChain, ChromaDB, scikit-learn, PostgreSQL, Recharts, Tailwind CSS, pytest, Vitest — this project stands entirely on them
 - **LLM:** GLM (Z.ai) served through an Anthropic-compatible endpoint
 
-## 23. License
+## 17. License
 
 **All rights reserved.** This repository currently carries no open-source license, so no reuse, modification, or redistribution is granted by default. The code is published for viewing and evaluation (portfolio) purposes. If you want to use part of it, please open an issue or reach out via GitHub first.
 
